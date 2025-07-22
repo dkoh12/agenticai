@@ -1,109 +1,179 @@
-# 🤖 Agentic AI Practice Workspace
+# 🤖 Agentic AI Learning Repository
 
-This workspace is set up for practicing with LangChain and LangGraph to build sophisticated AI agent workflows.
+A comprehensive collection of AI agent examples, MCP implementations, and practical applications for learning agentic AI workflows.
 
-## 📁 Project Structure
+## 📁 Repository Structure
 
-```
-agenticai/
-├── README.md                          # This file
-├── LICENSE                           # MIT License
-├── requirements.txt                  # Python dependencies
-├── .env.example                     # Environment variables template
-├── langchain_langgraph_practice.ipynb  # Interactive practice notebook
-└── examples/                        # Example implementations
-    ├── 01_basic_chain.py           # Simple LangChain example
-    ├── 02_agent_with_tools.py      # Agent with calculator tool
-    ├── 03_langgraph_workflow.py    # Basic LangGraph workflow
-    └── 04_multi_agent_workflow.py  # Complex multi-agent system
-```
+This repository is organized into three main sections:
+
+### 🔗 [langchain-langgraph/](./langchain-langgraph/)
+Complete learning materials for LangChain and LangGraph agentic AI workflows.
+- Basic chains and agents
+- Multi-agent coordination
+- Free alternatives to paid APIs
+- Interactive Jupyter notebooks
+- Local model setup with Ollama
+
+### 🔧 [mcp-core/](./mcp-core/)
+Core Model Context Protocol (MCP) examples and integrations.
+- MCP system demonstrations
+- Project templates
+- LangChain-MCP integration
+- Comprehensive documentation
+
+### 💰 [finance-mcp-app/](./finance-mcp-app/)
+Complete personal finance management application with MCP backend and web interface.
+- Modern Flask web dashboard
+- Budget alerts and monitoring
+- Transaction management
+- AI-powered financial insights
+- Interactive charts and reports
 
 ## 🚀 Quick Start
 
-### 1. Set up your environment
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd agenticai
+   ```
+
+2. **Set up Python environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
+3. **Choose your learning path:**
+   - **New to LangChain?** → Start with [`langchain-langgraph/`](./langchain-langgraph/)
+   - **Interested in MCP?** → Explore [`mcp-core/`](./mcp-core/)
+   - **Want a complete app?** → Try [`finance-mcp-app/`](./finance-mcp-app/)
+
+## 🎯 What You'll Learn
+
+- **Agentic AI Patterns** - Building autonomous AI agents
+- **Tool Integration** - Connecting AI to external systems
+- **Multi-Agent Systems** - Coordinating multiple AI agents
+- **MCP Protocol** - Standardized tool and resource access
+- **Real-World Applications** - Practical AI implementations
+- **Cost-Effective Solutions** - Using free alternatives to paid APIs
+
+## 📋 Prerequisites
+
+- Python 3.8+
+- Basic understanding of Python
+- Interest in AI and automation
+
+## � Project Structure
+
+```
+agenticai/
+├── README.md                      # This file  
+├── LICENSE                       # MIT License
+├── requirements.txt              # Python dependencies
+├── .env.example                 # Environment variables template
+├── langchain-langgraph/         # LangChain & LangGraph learning materials
+│   ├── README.md               # LangChain/LangGraph documentation
+│   ├── 01_basic_chain.py       # Simple LangChain example
+│   ├── 02_agent_with_tools.py  # Agent with calculator tool
+│   ├── 03_langgraph_workflow.py # Basic LangGraph workflow
+│   ├── 04_multi_agent_workflow.py # Complex multi-agent system
+│   ├── langchain_langgraph_practice.ipynb # Interactive notebook
+│   ├── free_practice.py        # Free alternatives examples
+│   ├── free_alternatives_guide.py # Guide to free APIs
+│   └── ollama_setup_guide.py   # Local model setup
+├── mcp-core/                    # Model Context Protocol examples
+│   ├── README.md               # MCP documentation
+│   ├── MCP_GUIDE.md           # Comprehensive MCP guide
+│   ├── mcp_system_demo.py     # Complete MCP demo
+│   ├── mcp_project_template.py # MCP project template
+│   └── mcp_langchain_integration.py # MCP-LangChain integration
+└── finance-mcp-app/            # Complete finance management app
+    ├── README.md               # Finance app documentation
+    ├── finance_web_app.py      # Flask web application
+    ├── finance_mcp_tool.py     # MCP backend
+    ├── finance_langchain_integration.py # AI features
+    ├── create_demo_data.py     # Sample data generator
+    ├── run_finance_web.sh      # Quick start script
+    ├── WEB_INTERFACE_GUIDE.md  # Web interface guide
+    ├── FIXES_APPLIED.md        # Troubleshooting guide
+    ├── templates/              # HTML templates
+    │   ├── base.html          # Base template
+    │   ├── dashboard.html     # Main dashboard
+    │   ├── transactions.html  # Transaction management
+    │   ├── budgets.html      # Budget monitoring
+    │   └── reports.html      # Reports and analytics
+    └── data/                  # Database files
+        └── finance.db         # SQLite database
+```
+
+## � Learning Paths
+
+### Path 1: LangChain Fundamentals
+1. Start with `langchain-langgraph/README.md`
+2. Work through the numbered examples (01-04)
+3. Use the interactive notebook for practice
+4. Explore free alternatives if you don't have API keys
+
+### Path 2: MCP Deep Dive
+1. Read `mcp-core/MCP_GUIDE.md`
+2. Run `mcp_system_demo.py` to see MCP in action
+3. Use `mcp_project_template.py` for your own projects
+4. Integrate with LangChain using the integration example
+
+### Path 3: Complete Application
+1. Go to `finance-mcp-app/`
+2. Follow the README setup instructions
+3. Run the web application
+4. Explore the source code to understand the architecture
+
+## � Setup Instructions
+
+### 1. Environment Setup
 ```bash
 # Copy the environment template
 cp .env.example .env
 
-# Edit .env and add your API keys
+# Edit .env and add your API keys (optional for free alternatives)
 # OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-### 2. Install dependencies
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Start practicing!
+### 3. Choose Your Starting Point
+- **Beginners**: Start with `langchain-langgraph/`
+- **Advanced**: Jump to `mcp-core/` or `finance-mcp-app/`
 
-#### Option A: Interactive Notebook (Recommended for Learning)
-Open `langchain_langgraph_practice.ipynb` in VS Code and follow the interactive exercises.
+## 🌟 Key Features
 
-#### Option B: Run Example Scripts
-```bash
-# Basic chain example
-python examples/01_basic_chain.py
+- **Progressive Learning** - From basics to advanced implementations
+- **Cost-Conscious** - Free alternatives to paid APIs included
+- **Practical Applications** - Real-world examples and complete applications
+- **Modern Architecture** - MCP protocol and best practices
+- **Interactive Learning** - Jupyter notebooks and web interfaces
+- **Comprehensive Documentation** - Detailed guides and troubleshooting
 
-# Agent with tools
-python examples/02_agent_with_tools.py
+## � Getting Help
 
-# LangGraph workflow
-python examples/03_langgraph_workflow.py
+- Each folder has its own README with specific instructions
+- Check troubleshooting guides in the respective folders
+- Look at code comments for implementation details
+- Use the interactive notebooks for hands-on learning
 
-# Multi-agent workflow
-python examples/04_multi_agent_workflow.py
-```
+## 🤝 Contributing
 
-## 🎯 What You'll Learn
+Feel free to contribute examples, improvements, or bug fixes:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-### 1. **LangChain Fundamentals**
-- Creating chains with prompts and LLMs
-- Building agents with tools
-- Memory and conversation management
-- Output parsing and formatting
+## 📜 License
 
-### 2. **LangGraph Workflows**
-- Graph-based agent architectures
-- State management across nodes
-- Conditional routing and branching
-- Multi-agent coordination
-
-### 3. **Advanced Patterns**
-- Tool integration and custom functions
-- Error handling and recovery
-- Performance optimization
-- Testing and debugging strategies
-
-## 📊 Example Workflows Included
-
-### 1. **Calculator Agent** (`01_basic_chain.py`)
-Simple agent that can perform mathematical calculations using tools.
-
-### 2. **Problem Analysis Workflow** (`03_langgraph_workflow.py`)
-LangGraph workflow that analyzes problems and provides recommendations.
-
-### 3. **Multi-Agent Content Creation** (`04_multi_agent_workflow.py`)
-Complex workflow with specialized agents for different types of content creation:
-- Technical content agent
-- Creative writing agent
-- Business content agent
-- Educational content agent
-- Review and revision system
-
-## 🛠️ Key Technologies
-
-- **LangChain**: Framework for building LLM applications
-- **LangGraph**: Library for building stateful, multi-actor applications
-- **OpenAI GPT**: Primary LLM provider (easily swappable)
-- **Python**: Programming language
-- **Jupyter**: Interactive development environment
-
-## 🔧 Configuration
-
-### Required Environment Variables
-```bash
-OPENAI_API_KEY=your_openai_api_key_here
-```
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ### Optional Environment Variables
 ```bash
