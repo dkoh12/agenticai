@@ -1,0 +1,30 @@
+{
+  "date": "2025-01-20",
+  "attendees": [
+    "Alice Johnson",
+    "Bob Martinez",
+    "Carol Davis"
+  ],
+  "topics": [
+    "Q1 project status review",
+    "New hire onboarding process",
+    "Budget allocation for Q2"
+  ],
+  "action_items": [
+    {
+      "owner": "Alice",
+      "task": "Complete API documentation",
+      "due": "2025-01-30"
+    },
+    {
+      "owner": "Bob",
+      "task": "Launch marketing campaign",
+      "due": "2025-02-15"
+    },
+    {
+      "owner": "Carol",
+      "task": "Infrastructure audit",
+      "due": "2025-02-05"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+Meeting Notes - Project Planning
+Date: 2025-01-15
+
+Attendees: Alice, Bob, Carol
+Topics:
+- AI Chat System progress update
+- Database migration timeline
+- Q1 budget review
+
+Action Items:
+- Alice: Complete API integration by Jan 30
+- Bob: Prepare marketing materials
+- Carol: Review database schema
