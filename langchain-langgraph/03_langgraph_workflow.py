@@ -1,18 +1,30 @@
 """
-LangGraph example: Simple state machine workflow
+LangGraph example: Simple state machine workflow using Ollama
+Using Ollama's Llama3.2 (local, free alternative to OpenAI)
+
+Setup Instructions:
+1. Install Ollama: https://ollama.ai/download
+2. Pull the model: ollama pull llama3.2
+3. Start Ollama: ollama serve (or just run ollama)
+4. Run this script!
+
+This example shows:
+- LangGraph state machine workflow
+- Problem analysis and recommendations
+- Multi-step reasoning with state management
 """
 
 import os
+import warnings
 from typing import TypedDict, Annotated
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_ollama import OllamaLLM
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 
-# Load environment variables
-load_dotenv()
+# Suppress deprecation warnings for cleaner output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Define the state
 class AgentState(TypedDict):
@@ -23,7 +35,7 @@ class AgentState(TypedDict):
 
 def analyze_problem(state: AgentState) -> AgentState:
     """Analyze the user's problem"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1)
+    llm = OllamaLLM(model="llama3.2", temperature=0.1)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are an expert analyst. Analyze the given problem and provide a structured analysis."),
@@ -45,7 +57,7 @@ def analyze_problem(state: AgentState) -> AgentState:
 
 def generate_recommendation(state: AgentState) -> AgentState:
     """Generate recommendations based on analysis"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
+    llm = OllamaLLM(model="llama3.2", temperature=0.2)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "Based on the analysis provided, generate practical recommendations and next steps."),
@@ -84,8 +96,16 @@ def create_analysis_workflow():
 
 def run_workflow_example():
     """Run the LangGraph workflow example"""
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Please set your OPENAI_API_KEY in the .env file")
+    # Test Ollama connection first
+    try:
+        test_llm = OllamaLLM(model="llama3.2")
+        test_response = test_llm.invoke("Hello")
+        print(f"✅ Ollama connection successful! Test response: {test_response[:50]}...")
+    except Exception as e:
+        print(f"❌ Error connecting to Ollama: {e}")
+        print("Please make sure:")
+        print("1. Ollama is installed and running")
+        print("2. Llama3.2 model is downloaded: ollama pull llama3.2")
         return
     
     app = create_analysis_workflow()

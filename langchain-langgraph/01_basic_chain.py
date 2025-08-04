@@ -16,7 +16,6 @@ Advantages of Ollama:
 - Privacy-focused
 """
 
-import os
 from langchain_ollama import OllamaLLM
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser

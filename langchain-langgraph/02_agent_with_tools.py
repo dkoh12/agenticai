@@ -14,10 +14,8 @@ This example shows:
 - Tool execution and reasoning
 """
 
-import os
 import warnings
 from langchain_ollama import OllamaLLM
-from langchain.prompts import ChatPromptTemplate
 from langchain.tools import Tool
 from langchain.agents import initialize_agent, AgentType
 
@@ -27,10 +25,14 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 def calculator_tool(expression: str) -> str:
     """Simple calculator tool"""
     try:
+        # Replace ^ with ** for Python exponentiation
+        expression = expression.replace('^', '**')
+        # Remove quotes if they exist
+        expression = expression.strip('"\'')
         result = eval(expression)
-        return f"The result is: {result}"
+        return str(result)  # Just return the number, not "The result is: X"
     except Exception as e:
-        return f"Error calculating: {str(e)}"
+        return f"Error: {str(e)}. Use ** for exponentiation, not ^"
 
 def create_research_agent():
     """Create an agent with tools and memory"""
@@ -46,7 +48,7 @@ def create_research_agent():
     tools = [
         Tool(
             name="calculator",
-            description="Useful for mathematical calculations. Input should be a mathematical expression.",
+            description="Calculate mathematical expressions. Input: Python math expression (use ** for power). Returns: numerical result only.",
             func=calculator_tool
         )
     ]
@@ -57,8 +59,9 @@ def create_research_agent():
         llm=llm,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
-        max_iterations=3,
-        handle_parsing_errors=True
+        max_iterations=2,
+        handle_parsing_errors=True,
+        early_stopping_method="generate"
     )
     
     return agent_executor
