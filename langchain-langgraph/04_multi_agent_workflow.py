@@ -1,18 +1,31 @@
 """
-Advanced LangGraph example: Multi-agent workflow with conditional routing
+Advanced LangGraph example: Multi-agent workflow with conditional routing using Ollama
+Using Ollama's Llama3.2 (local, free alternative to OpenAI)
+
+Setup Instructions:
+1. Install Ollama: https://ollama.ai/download
+2. Pull the model: ollama pull llama3.2
+3. Start Ollama: ollama serve (or just run ollama)
+4. Run this script!
+
+This example shows:
+- Multi-agent workflow with conditional routing
+- Different specialized agents (creative, technical, analytical, general)
+- Review and revision loops
+- Complex state management
 """
 
 import os
+import warnings
 from typing import TypedDict, Annotated, Literal
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_ollama import OllamaLLM
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 
-# Load environment variables
-load_dotenv()
+# Suppress deprecation warnings for cleaner output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # Define the state
 class MultiAgentState(TypedDict):
@@ -25,7 +38,7 @@ class MultiAgentState(TypedDict):
 
 def classify_task(state: MultiAgentState) -> MultiAgentState:
     """Classify the type of task"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1)
+    llm = OllamaLLM(model="llama3.2", temperature=0.1)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", """Classify the user's request into one of these categories:
@@ -51,7 +64,7 @@ def classify_task(state: MultiAgentState) -> MultiAgentState:
 
 def creative_agent(state: MultiAgentState) -> MultiAgentState:
     """Handle creative tasks"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.8)
+    llm = OllamaLLM(model="llama3.2", temperature=0.8)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a creative writing assistant. Create engaging, imaginative content."),
@@ -70,7 +83,7 @@ def creative_agent(state: MultiAgentState) -> MultiAgentState:
 
 def technical_agent(state: MultiAgentState) -> MultiAgentState:
     """Handle technical tasks"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
+    llm = OllamaLLM(model="llama3.2", temperature=0.2)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a technical expert. Provide accurate, detailed technical information and solutions."),
@@ -89,7 +102,7 @@ def technical_agent(state: MultiAgentState) -> MultiAgentState:
 
 def analytical_agent(state: MultiAgentState) -> MultiAgentState:
     """Handle analytical tasks"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
+    llm = OllamaLLM(model="llama3.2", temperature=0.3)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a data analyst. Provide structured analysis with clear insights and conclusions."),
@@ -108,7 +121,7 @@ def analytical_agent(state: MultiAgentState) -> MultiAgentState:
 
 def general_agent(state: MultiAgentState) -> MultiAgentState:
     """Handle general tasks"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5)
+    llm = OllamaLLM(model="llama3.2", temperature=0.5)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "You are a helpful assistant. Provide clear, helpful responses to user questions."),
@@ -127,7 +140,7 @@ def general_agent(state: MultiAgentState) -> MultiAgentState:
 
 def review_agent(state: MultiAgentState) -> MultiAgentState:
     """Review and provide feedback on the content"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1)
+    llm = OllamaLLM(model="llama3.2", temperature=0.1)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are a quality reviewer. Evaluate the content and provide feedback.
@@ -178,7 +191,7 @@ def should_continue_review(state: MultiAgentState) -> Literal["finalize", "revis
 
 def revise_content(state: MultiAgentState) -> MultiAgentState:
     """Revise content based on feedback"""
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5)
+    llm = OllamaLLM(model="llama3.2", temperature=0.5)
     
     prompt = ChatPromptTemplate.from_messages([
         ("system", "Revise the content based on the feedback provided. Improve quality and address the concerns."),
@@ -252,8 +265,16 @@ def create_multi_agent_workflow():
 
 def run_multi_agent_example():
     """Run the multi-agent workflow example"""
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Please set your OPENAI_API_KEY in the .env file")
+    # Test Ollama connection first
+    try:
+        test_llm = OllamaLLM(model="llama3.2")
+        test_response = test_llm.invoke("Hello")
+        print(f"✅ Ollama connection successful! Test response: {test_response[:50]}...")
+    except Exception as e:
+        print(f"❌ Error connecting to Ollama: {e}")
+        print("Please make sure:")
+        print("1. Ollama is installed and running")
+        print("2. Llama3.2 model is downloaded: ollama pull llama3.2")
         return
     
     app = create_multi_agent_workflow()

@@ -6,7 +6,6 @@ This folder contains all the learning materials and examples for LangChain and L
 
 ### Core Examples
 - `01_basic_chain.py` - Basic LangChain chain implementation
-- `01_basic_chain_demo.py` - Interactive demo of basic chains
 - `02_agent_with_tools.py` - Agent with custom tools
 - `03_langgraph_workflow.py` - LangGraph workflow implementation
 - `04_multi_agent_workflow.py` - Multi-agent coordination examples
@@ -14,10 +13,6 @@ This folder contains all the learning materials and examples for LangChain and L
 ### Learning Resources
 - `langchain_langgraph_practice.ipynb` - Interactive Jupyter notebook for practice
 - `free_practice.py` - Free practice examples without API costs
-
-### Setup Guides
-- `free_alternatives_guide.py` - Guide to using free alternatives to OpenAI
-- `ollama_setup_guide.py` - Setup guide for local Ollama models
 
 ## Getting Started
 

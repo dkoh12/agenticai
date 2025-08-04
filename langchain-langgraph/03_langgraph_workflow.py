@@ -14,7 +14,6 @@ This example shows:
 - Multi-step reasoning with state management
 """
 
-import os
 import warnings
 from typing import TypedDict, Annotated
 from langchain_ollama import OllamaLLM
