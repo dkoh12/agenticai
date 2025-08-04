@@ -1,19 +1,28 @@
 """
-Advanced LangChain example: Multiple chains with memory and tools
+Advanced LangChain example: Agent with tools using Ollama
+Using Ollama's Llama3.2 (local, free alternative to OpenAI)
+
+Setup Instructions:
+1. Install Ollama: https://ollama.ai/download
+2. Pull the model: ollama pull llama3.2
+3. Start Ollama: ollama serve (or just run ollama)
+4. Run this script!
+
+This example shows:
+- Agent with custom tools
+- Mathematical calculations
+- Tool execution and reasoning
 """
 
 import os
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.schema.output_parser import StrOutputParser
-from langchain.memory import ConversationBufferMemory
+import warnings
+from langchain_ollama import OllamaLLM
+from langchain.prompts import ChatPromptTemplate
 from langchain.tools import Tool
-from langchain.agents import create_openai_functions_agent, AgentExecutor
-from langchain import hub
+from langchain.agents import initialize_agent, AgentType
 
-# Load environment variables
-load_dotenv()
+# Suppress deprecation warnings for cleaner output
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def calculator_tool(expression: str) -> str:
     """Simple calculator tool"""
@@ -26,9 +35,10 @@ def calculator_tool(expression: str) -> str:
 def create_research_agent():
     """Create an agent with tools and memory"""
     
-    # Initialize the LLM
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
+    # Initialize the Ollama LLM
+    print("Connecting to Ollama (Llama3.2)...")
+    llm = OllamaLLM(
+        model="llama3.2",
         temperature=0.1
     )
     
@@ -41,26 +51,30 @@ def create_research_agent():
         )
     ]
     
-    # Get a pre-built prompt from the hub
-    prompt = hub.pull("hwchase17/openai-functions-agent")
-    
-    # Create the agent
-    agent = create_openai_functions_agent(llm, tools, prompt)
-    
-    # Create the agent executor
-    agent_executor = AgentExecutor(
-        agent=agent,
+    # Create the agent executor with a compatible agent type for Ollama
+    agent_executor = initialize_agent(
         tools=tools,
+        llm=llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
-        max_iterations=3
+        max_iterations=3,
+        handle_parsing_errors=True
     )
     
     return agent_executor
 
 def run_agent_example():
     """Run the agent example"""
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Please set your OPENAI_API_KEY in the .env file")
+    # Test Ollama connection first
+    try:
+        test_llm = OllamaLLM(model="llama3.2")
+        test_response = test_llm.invoke("Hello")
+        print(f"✅ Ollama connection successful! Test response: {test_response[:50]}...")
+    except Exception as e:
+        print(f"❌ Error connecting to Ollama: {e}")
+        print("Please make sure:")
+        print("1. Ollama is installed and running")
+        print("2. Llama3.2 model is downloaded: ollama pull llama3.2")
         return
     
     agent = create_research_agent()
