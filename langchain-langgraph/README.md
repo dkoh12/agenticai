@@ -21,6 +21,10 @@ This folder contains all the learning materials and examples for LangChain and L
 
 ## Getting Started
 
+```
+source .venv/bin/activate
+```
+
 1. Install dependencies:
    ```bash
    pip install langchain langgraph langchain-community

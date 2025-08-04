@@ -6,6 +6,7 @@ This shows how to learn LangChain concepts without spending money on API calls.
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langchain.tools import Tool
+from langchain_core.runnables import RunnableLambda
 from typing import TypedDict, Annotated, Literal
 import json
 
@@ -156,8 +157,9 @@ def demo_free_langchain():
     free_llm = FreeLLM()
     output_parser = StrOutputParser()
     
-    # Create the chain
-    chain = prompt | free_llm | output_parser
+    # Create the chain using RunnableLambda to make FreeLLM compatible
+    llm_runnable = RunnableLambda(free_llm.invoke)
+    chain = prompt | llm_runnable | output_parser
     
     # Test different types of requests
     test_inputs = [

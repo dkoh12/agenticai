@@ -1,22 +1,32 @@
 """
 Basic LangChain example: Simple chain with prompt template and LLM
+Using Ollama's Llama3.2 (local, free alternative to OpenAI)
+
+Setup Instructions:
+1. Install Ollama: https://ollama.ai/download
+2. Pull the model: ollama pull llama3.2
+3. Start Ollama: ollama serve (or just run ollama)
+4. Install the new langchain-ollama package: pip install -U langchain-ollama
+5. Run this script!
+
+Advantages of Ollama:
+- 100% Free and local
+- No API keys required
+- Works offline
+- Privacy-focused
 """
 
 import os
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
+from langchain_ollama import OllamaLLM
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
-
-# Load environment variables
-load_dotenv()
 
 def basic_chain_example():
     """Simple chain: Prompt -> LLM -> Output Parser"""
     
-    # Initialize the LLM
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
+    # Initialize Ollama with Llama3.2 model (using new OllamaLLM class)
+    llm = OllamaLLM(
+        model="llama3.2",
         temperature=0.7
     )
     
@@ -35,9 +45,20 @@ def basic_chain_example():
     return chain
 
 def run_example():
-    """Run the basic chain example"""
-    if not os.getenv("OPENAI_API_KEY"):
-        print("Please set your OPENAI_API_KEY in the .env file")
+    """Run the basic chain example with Ollama"""
+    
+    # Check if Ollama is available
+    try:
+        # Test connection to Ollama (using new OllamaLLM class)
+        test_llm = OllamaLLM(model="llama3.2")
+        print("✅ Ollama connection successful!")
+    except Exception as e:
+        print("❌ Ollama not available. Please install and start Ollama first:")
+        print("   1. Install Ollama: https://ollama.ai/download")
+        print("   2. Install langchain-ollama: pip install -U langchain-ollama")
+        print("   3. Run: ollama pull llama3.2")
+        print("   4. Start: ollama serve")
+        print(f"   Error: {e}")
         return
     
     chain = basic_chain_example()
