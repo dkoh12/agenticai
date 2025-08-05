@@ -1,6 +1,6 @@
-# AutoGen Agent-to-Agent Communication Examples
+# CrewAI Agent-to-Agent Communication Examples
 
-This folder contains examples of **true Agent-to-Agent (A2A) communication** using Microsoft's AutoGen framework with local Ollama models.
+This folder contains examples of **true Agent-to-Agent (A2A) communication** using CrewAI framework with local Ollama models.
 
 ## 🎯 What is A2A Communication?
 
@@ -8,7 +8,7 @@ This folder contains examples of **true Agent-to-Agent (A2A) communication** usi
 
 ### A2A vs Orchestrated Workflows
 
-| **AutoGen (A2A)** | **LangGraph (Orchestrated)** |
+| **CrewAI (A2A)** | **LangGraph (Orchestrated)** |
 |---|---|
 | Agents decide who to talk to | Central orchestrator controls flow |
 | Conversational, back-and-forth | Sequential state processing |
@@ -18,9 +18,9 @@ This folder contains examples of **true Agent-to-Agent (A2A) communication** usi
 
 ## 🛠️ Setup Instructions
 
-### 1. Install AutoGen
+### 1. Install CrewAI
 ```bash
-pip install pyautogen
+pip install crewai
 ```
 
 ### 2. Setup Ollama (Free Local AI)
@@ -37,83 +37,91 @@ ollama serve
 
 ### 3. Run the Examples
 ```bash
-# Basic A2A examples
-python 01_autogen_basic_a2a.py
+# Basic A2A conversation
+python 01_simple_crewai_chat.py
 
-# Advanced collaboration patterns  
-python 02_autogen_advanced_a2a.py
+# Agent debate and negotiation
+python 02_agent_debate.py
 
-# Conceptual comparison (works without AutoGen installed)
-python 03_autogen_vs_langgraph_comparison.py
+# Advanced multi-agent collaboration
+python 03_advanced_crewai_collaboration.py
 ```
 
 ## 📁 File Descriptions
 
-### `01_autogen_basic_a2a.py`
-**Basic A2A Communication Patterns**
-- Two agents having direct conversations
-- Multi-agent group chats
-- Negotiation between agents
-- Connection testing
+### `01_simple_crewai_chat.py`
+**Basic A2A Communication**
+- Student and Teacher agents having educational conversation
+- Shows `allow_delegation=True` enabling A2A communication
+- Demonstrates real agent-to-agent communication with Ollama
 
-**Key Examples:**
-- Researcher ↔ Writer collaboration
-- Group chat with Researcher, Writer, Critic
-- Buyer ↔ Seller negotiation
+**Key Features:**
+- Student asks questions about neural networks
+- Teacher responds and asks follow-up questions
+- Natural conversational flow between agents
 
-### `02_autogen_advanced_a2a.py`
-**Advanced A2A Patterns**
-- Software development team collaboration
-- Academic research partnerships
-- Debate and consensus building
-- Creative collaboration
+### `02_agent_debate.py`
+**Agent Debate and Negotiation**
+- Remote Work Advocate vs Office Work Advocate
+- Agents present arguments and counter-arguments
+- Collaborative consensus building
 
-**Key Examples:**
-- Product Manager, Developer, Frontend Dev, QA working together
-- CS Researcher, Psychology Researcher, Stats Expert on a paper
-- Optimist vs Pessimist finding consensus
-- Writer, Artist, Sound Designer creating a film concept
+**Key Features:**
+- Opposing viewpoints and structured debate
+- Agents work toward compromise solution
+- Real negotiation and consensus building
 
-### `03_autogen_vs_langgraph_comparison.py`
-**Conceptual Comparison**
-- Side-by-side comparison of A2A vs Orchestrated approaches
-- Code pattern examples
-- When to use which approach
-- Hybrid strategies
+### `03_advanced_crewai_collaboration.py`
+**Advanced Multi-Agent Collaboration**
+- Research collaboration between Researcher, Writer, and Critic
+- Complex multi-step workflows with agent autonomy
+- Negotiation and quality review cycles
+
+**Key Features:**
+- 3-agent research → writing → review workflow
+- Buyer-seller negotiation scenarios
+- Advanced delegation patterns
 
 ## 🤝 Key A2A Communication Patterns
 
-### 1. Direct Agent Conversations
+### 1. Agent Delegation
 ```python
-# Agents talk directly to each other
-user_proxy.initiate_chat(researcher, message="Research AI trends")
-# researcher → writer (autonomous decision)
-# writer → researcher (responds directly)
+# Agents use delegation to communicate
+student = Agent(
+    role="Curious Student",
+    allow_delegation=True  # Enables A2A communication
+)
+teacher = Agent(
+    role="AI Teacher", 
+    allow_delegation=True  # Can respond to student
+)
 ```
 
-### 2. Group Discussions
+### 2. Collaborative Workflows
 ```python
-# Multiple agents in group chat
-groupchat = GroupChat(agents=[researcher, writer, critic])
-# Agents decide who speaks next
-# Dynamic, conversational flow
+# Sequential collaboration with dependencies
+research_task = Task(description="Research AI trends", agent=researcher)
+writing_task = Task(
+    description="Write based on research", 
+    agent=writer,
+    dependencies=[research_task]  # Creates collaboration
+)
 ```
 
-### 3. Role-Based Collaboration
+### 3. Multi-Agent Crews
 ```python
-# Agents with different expertise
-product_manager = AssistantAgent(name="PM", system_message="Define requirements...")
-developer = AssistantAgent(name="Dev", system_message="Technical solutions...")
-# They collaborate autonomously based on their roles
+# Multiple agents working together
+crew = Crew(
+    agents=[researcher, writer, critic],
+    tasks=[research_task, writing_task, review_task],
+    process="sequential"  # Enables agent collaboration
+)
 ```
 
-### 4. Negotiation and Debate
-```python
-# Agents with opposing viewpoints
-buyer = AssistantAgent(name="buyer", system_message="Get best price...")
-seller = AssistantAgent(name="seller", system_message="Make good sale...")
-# They negotiate directly until reaching agreement
-```
+### 4. Real-Time Agent Communication
+- Agents ask questions to coworkers using `🔧 Using Ask question to coworker`
+- Dynamic conversation flow based on agent decisions
+- Autonomous collaboration without central control
 
 ## 🔍 Compare with LangGraph Examples
 
@@ -127,9 +135,10 @@ To see the difference, compare these A2A examples with the orchestrated workflow
 
 ## 🎯 When to Use A2A Communication
 
-**Use AutoGen A2A when you want:**
+**Use CrewAI A2A when you want:**
 - Brainstorming and creative collaboration
-- Negotiation scenarios
+- Educational conversations and mentoring
+- Negotiation scenarios and debate
 - Emergent solutions from team interaction
 - Human-like group dynamics
 - Flexible, conversational problem-solving
@@ -148,12 +157,13 @@ To see the difference, compare these A2A examples with the orchestrated workflow
 ✅ **Experimentation**: Try unlimited agent conversations  
 ✅ **Realistic Interactions**: Agents develop dynamic relationships  
 ✅ **Emergent Behavior**: Solutions emerge from agent collaboration  
+✅ **Real A2A Framework**: CrewAI provides working A2A communication
 
 ## 🔧 Troubleshooting
 
-### AutoGen Import Error
+### CrewAI Import Error
 ```bash
-pip install pyautogen
+pip install crewai
 ```
 
 ### Ollama Connection Issues
@@ -168,16 +178,16 @@ ollama serve
 ollama pull llama3.2
 ```
 
-### Agent Conversations Too Long
-- Adjust `max_consecutive_auto_reply` parameter
-- Use more specific termination conditions
-- Set clearer agent instructions
+### Agent Conversations Taking Too Long
+- Agents thinking extensively means they're working properly
+- The `🧠 Thinking...` indicates real agent processing
+- `🔧 Using Ask question to coworker` shows A2A communication happening
 
 ## 💡 Next Steps
 
-1. **Run the examples** to see A2A communication in action
+1. **Run the examples** to see real A2A communication in action
 2. **Experiment** with different agent personalities and roles
 3. **Compare** with the LangGraph examples in `../langchain-langgraph/`
-4. **Combine approaches** - use LangGraph for workflows, AutoGen for collaborative stages
+4. **Create custom crews** with your own agent combinations
 
 The future of AI is agents working together autonomously! 🚀
