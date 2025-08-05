@@ -1,0 +1,26 @@
+{
+  "departments": {
+    "engineering": {
+      "budget": 500000,
+      "spent": 125000
+    },
+    "marketing": {
+      "budget": 200000,
+      "spent": 75000
+    },
+    "sales": {
+      "budget": 150000,
+      "spent": 45000
+    }
+  },
+  "projects": {
+    "ai_chat": {
+      "allocated": 250000,
+      "spent": 80000
+    },
+    "db_migration": {
+      "allocated": 150000,
+      "spent": 25000
+    }
+  }
+}

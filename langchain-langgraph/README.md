@@ -2,6 +2,22 @@
 
 This folder contains all the learning materials and examples for LangChain and LangGraph agentic AI workflows.
 
+
+LangChain / LangGraph
+✅ GREAT FOR:
+- Content creation workflows
+- Multi-step reasoning pipelines  
+- Quality control systems
+- RAG (Retrieval-Augmented Generation)
+- Customer service bots
+- Document processing pipelines
+
+❌ LESS IDEAL FOR:
+- Trading agent negotiations
+- Distributed supply chain coordination
+- Multi-party autonomous negotiations
+- Real-time competitive scenarios
+
 ## Contents
 
 ### Core Examples
@@ -39,3 +55,4 @@ source .venv/bin/activate
 - Multi-agent workflows
 - Free alternatives to paid APIs
 - Local model deployment with Ollama
+

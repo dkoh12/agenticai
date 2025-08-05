@@ -13,9 +13,12 @@ This example shows:
 - Different specialized agents (creative, technical, analytical, general)
 - Review and revision loops
 - Complex state management
+
+
+This example is an orchestrated sequential execution with shared state.
+It's not a true agent-to-agent communication.
 """
 
-import os
 import warnings
 from typing import TypedDict, Annotated, Literal
 from langchain_ollama import OllamaLLM
@@ -27,10 +30,10 @@ from langgraph.graph.message import add_messages
 # Suppress deprecation warnings for cleaner output
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Define the state
+# Define the state/memory that flows between all agents
 class MultiAgentState(TypedDict):
     messages: Annotated[list, add_messages]
-    task_type: str
+    task_type: str # determines which agent to use
     content: str
     review_feedback: str
     final_output: str
@@ -209,6 +212,63 @@ def revise_content(state: MultiAgentState) -> MultiAgentState:
         **state,
         "content": revised_content
     }
+
+"""
+┌─────────────┐
+│   START     │
+└─────┬───────┘
+      │
+      ▼
+┌─────────────┐    Determines task_type:
+│  classify   │ ──► "creative", "technical", 
+└─────┬───────┘     "analytical", or "general"
+      │
+      ▼
+┌─────────────┐
+│ ROUTING     │ ◄── Based on task_type
+│ DECISION    │
+└─┬─┬─┬─┬─────┘
+  │ │ │ │
+  │ │ │ └─► ┌──────────────┐    temp=0.5
+  │ │ │     │   general    │ ──┐
+  │ │ │     └──────────────┘   │
+  │ │ │                        │
+  │ │ └───► ┌──────────────┐   │ temp=0.3
+  │ │       │ analytical   │ ──┤
+  │ │       └──────────────┘   │
+  │ │                          │
+  │ └─────► ┌──────────────┐   │ temp=0.2  
+  │         │  technical   │ ──┤
+  │         └──────────────┘   │
+  │                            │
+  └───────► ┌──────────────┐   │ temp=0.8
+            │  creative    │ ──┤
+            └──────────────┘   │
+                               │
+                               ▼
+                         ┌──────────────┐
+                         │    review    │ ◄─┐ temp=0.1
+                         └──────┬───────┘   │
+                                │           │
+                                ▼           │
+                         ┌──────────────┐   │
+                         │   REVIEW     │   │
+                         │  DECISION    │   │
+                         └──┬────────┬──┘   │
+                            │        │      │
+                approved OR │        │ needs│
+               max_iterations│        │revision
+                            │        │      │
+                            ▼        ▼      │
+                    ┌──────────────┐ ┌──────┴────┐
+                    │   finalize   │ │   revise  │ temp=0.5
+                    └──────┬───────┘ └───────────┘
+                           │
+                           ▼
+                         ┌─────┐
+                         │ END │
+                         └─────┘
+"""
 
 def create_multi_agent_workflow():
     """Create a multi-agent workflow with conditional routing"""

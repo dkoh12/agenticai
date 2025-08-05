@@ -21,6 +21,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
+# Langgraph basically helps you build a DAG workflow for agents
 
 # Suppress deprecation warnings for cleaner output
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -46,6 +47,9 @@ def analyze_problem(state: AgentState) -> AgentState:
     # Get the last user message
     user_input = state["messages"][-1].content if state["messages"] else ""
     
+    # the dictionary key must match the variable name in the prompt
+    # e.g. "{input}" in the prompt means you must pass "input" as the key
+    # when invoking the chain
     analysis = chain.invoke({"input": user_input})
     
     return {
@@ -73,10 +77,16 @@ def generate_recommendation(state: AgentState) -> AgentState:
         "recommendation": recommendation
     }
 
+"""
+START → [analyze] → [recommend] → END
+         ↓            ↓
+    Updates state   Updates state
+    with analysis   with recommendations
+"""
 def create_analysis_workflow():
     """Create a LangGraph workflow for problem analysis"""
     
-    # Create the state graph
+    # Create the state graph with AgentState as its shared memory
     workflow = StateGraph(AgentState)
     
     # Add nodes
