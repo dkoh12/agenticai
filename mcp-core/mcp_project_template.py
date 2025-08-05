@@ -1,11 +1,13 @@
 """
-MCP Project Template - Ready to use MCP system with LangChain
-This template provides a foundation for building MCP-enabled AI systems
+MCP Project Template - Production-ready MCP system with Ollama LLM
+This template provides a complete foundation for building MCP-enabled AI systems with real LLM integration
 """
 
 import json
 import sqlite3
 import os
+import asyncio
+import requests
 from typing import Dict, List, Any, Optional, TypedDict, Annotated, Literal
 from pathlib import Path
 from datetime import datetime
@@ -356,12 +358,179 @@ class MCPServer:
         """List available tools"""
         return list(self.tools.keys())
 
+# Ollama LLM Integration for MCP
+class OllamaMCPAgent:
+    """MCP Agent powered by Ollama LLM for intelligent tool selection"""
+    
+    def __init__(self, server: MCPServer, model: str = "llama3.2", base_url: str = "http://localhost:11434"):
+        self.server = server
+        self.model = model
+        self.base_url = base_url
+        self.conversation_history = []
+        
+        # Check Ollama connection
+        if not self._check_ollama():
+            raise RuntimeError("Cannot connect to Ollama. Please ensure Ollama is running: 'ollama serve'")
+    
+    def _check_ollama(self) -> bool:
+        """Check if Ollama is accessible"""
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+    
+    def _call_ollama(self, prompt: str) -> str:
+        """Make API call to Ollama"""
+        try:
+            url = f"{self.base_url}/api/generate"
+            payload = {
+                "model": self.model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.0,
+                    "num_predict": 512
+                }
+            }
+            
+            response = requests.post(url, json=payload, timeout=30)
+            response.raise_for_status()
+            
+            result = response.json()
+            return result.get("response", "").strip()
+            
+        except Exception as e:
+            return f"Error calling Ollama: {e}"
+    
+    async def process_request(self, user_request: str) -> str:
+        """Process user request using Ollama LLM to select and execute tools"""
+        print(f"🤖 Processing request with Ollama {self.model}: {user_request}")
+        
+        # Build tool context for LLM
+        available_tools = []
+        for tool_name, tool in self.server.tools.items():
+            tool_info = {
+                "name": tool_name,
+                "description": tool.description,
+                "schema": tool.get_schema()
+            }
+            available_tools.append(tool_info)
+        
+        # Create prompt for tool selection
+        prompt = f"""You are an AI assistant with access to company data through MCP tools.
+
+Available tools:
+{json.dumps(available_tools, indent=2)}
+
+User request: "{user_request}"
+
+Analyze the request and respond with ONLY a JSON object specifying which tool to use:
+{{
+  "tool_name": "exact_tool_name",
+  "parameters": {{
+    "param1": "value1",
+    "param2": "value2"
+  }},
+  "reasoning": "brief explanation of why this tool was chosen"
+}}
+
+Examples:
+- For database queries: {{"tool_name": "database_operations", "parameters": {{"operation": "query", "sql": "SELECT * FROM users"}}}}
+- For file operations: {{"tool_name": "file_system", "parameters": {{"operation": "read", "path": "filename.txt"}}}}
+
+Respond with ONLY the JSON, no other text:"""
+        
+        # Get LLM response
+        llm_response = self._call_ollama(prompt)
+        print(f"📤 Ollama response: {llm_response}")
+        
+        try:
+            # Parse LLM response
+            response_clean = llm_response.strip()
+            if '```json' in response_clean:
+                response_clean = response_clean.split('```json')[1].split('```')[0].strip()
+            elif '```' in response_clean:
+                response_clean = response_clean.split('```')[1].strip()
+            
+            tool_call = json.loads(response_clean)
+            tool_name = tool_call.get("tool_name")
+            parameters = tool_call.get("parameters", {})
+            reasoning = tool_call.get("reasoning", "No reasoning provided")
+            
+            if not tool_name:
+                return "❌ LLM did not specify a tool to use"
+            
+            print(f"🔧 Executing tool: {tool_name}")
+            print(f"💭 Reasoning: {reasoning}")
+            print(f"📋 Parameters: {parameters}")
+            
+            # Execute the selected tool
+            result = await self.server.call_tool(tool_name, **parameters)
+            
+            # Generate natural language response
+            if result.get('success'):
+                # Create context for natural response generation
+                context_prompt = f"""Based on this tool execution result, provide a helpful natural language response to the user.
+
+User question: "{user_request}"
+Tool used: {tool_name}
+Tool result: {json.dumps(result, indent=2)}
+
+Provide a clear, helpful response in natural language. Focus on the key information the user needs:"""
+                
+                natural_response = self._call_ollama(context_prompt)
+                
+                return f"""✅ **Tool Execution Successful**
+**Tool Used:** {tool_name}
+**Reasoning:** {reasoning}
+
+**Response:** {natural_response}
+
+**Raw Data:** {json.dumps(result, indent=2)}"""
+            else:
+                return f"❌ **Tool Execution Failed**\n**Tool:** {tool_name}\n**Error:** {result.get('error', 'Unknown error')}"
+                
+        except json.JSONDecodeError as e:
+            return f"❌ Failed to parse LLM response as JSON: {e}\nRaw response: {llm_response}"
+        except Exception as e:
+            return f"❌ Error processing request: {e}"
+    
+    async def interactive_mode(self):
+        """Start interactive chat mode"""
+        print("\n🎮 Interactive MCP Agent (Powered by Ollama)")
+        print("Type your requests, or 'quit' to exit")
+        print("Examples:")
+        print("  - 'Show me all users in the database'")
+        print("  - 'Read the company readme file'")
+        print("  - 'Find projects owned by engineering team'")
+        print("  - 'Search for remote work policies'")
+        print("-" * 50)
+        
+        while True:
+            try:
+                user_input = input("\n💬 Your request: ").strip()
+                if user_input.lower() in ['quit', 'exit', 'q']:
+                    print("👋 Goodbye!")
+                    break
+                
+                if user_input:
+                    response = await self.process_request(user_input)
+                    print(f"\n🤖 Agent Response:\n{response}")
+                    
+            except KeyboardInterrupt:
+                print("\n👋 Goodbye!")
+                break
+            except Exception as e:
+                print(f"❌ Error: {e}")
+
 # Usage Example and Demo
 async def demo_mcp_system():
-    """Demonstrate the complete MCP system"""
+    """Demonstrate the complete MCP system with Ollama LLM"""
     
     print("🔌 Model Context Protocol (MCP) System Demo")
-    print("=" * 60)
+    print("🦙 Powered by Ollama llama3.2")
+    print("=" * 70)
     
     # Create MCP server
     server = MCPServer("company-data-server")
@@ -374,9 +543,60 @@ async def demo_mcp_system():
     server.register_tool(file_tool)
     
     print(f"\n📋 Server Manifest:")
-    print(json.dumps(server.get_manifest(), indent=2))
+    manifest = server.get_manifest()
+    print(f"   Server: {manifest['name']} v{manifest['version']}")
+    print(f"   Tools: {len(manifest['capabilities']['tools'])}")
+    print(f"   Protocol: {manifest['protocol_version']}")
     
-    # Test scenarios
+    try:
+        # Create Ollama-powered agent
+        agent = OllamaMCPAgent(server)
+        print("✅ Ollama agent initialized successfully")
+        
+        # Intelligent test scenarios using natural language
+        intelligent_scenarios = [
+            "Show me all users in the database",
+            "What's in the company readme file?",
+            "Find all projects owned by engineering team members",
+            "Search for information about remote work policies",
+            "List all available files in the workspace",
+            "Show me the meeting minutes"
+        ]
+        
+        print(f"\n🧪 Running {len(intelligent_scenarios)} intelligent scenarios...")
+        
+        for i, request in enumerate(intelligent_scenarios, 1):
+            print(f"\n" + "="*80)
+            print(f"🎯 Intelligent Test {i}/{len(intelligent_scenarios)}")
+            print(f"📝 User Request: {request}")
+            print("-" * 60)
+            
+            try:
+                response = await agent.process_request(request)
+                print(response)
+            except Exception as e:
+                print(f"❌ Error in scenario {i}: {e}")
+            
+            # Small delay between requests
+            await asyncio.sleep(1)
+        
+        # Offer interactive mode
+        print(f"\n" + "="*80)
+        choice = input("\n🎮 Would you like to try interactive mode? (y/n): ").strip().lower()
+        if choice in ['y', 'yes']:
+            await agent.interactive_mode()
+            
+    except RuntimeError as e:
+        print(f"❌ Cannot initialize Ollama agent: {e}")
+        print("💡 Make sure Ollama is running: ollama serve")
+        print("💡 And llama3.2 model is available: ollama pull llama3.2")
+        
+        # Fall back to basic MCP demo without LLM
+        print("\n🔄 Running basic MCP demo without LLM...")
+        await demo_basic_mcp(server)
+
+async def demo_basic_mcp(server: MCPServer):
+    """Basic MCP demo without LLM (fallback)"""
     scenarios = [
         {
             "name": "Database Query - All Users",
@@ -414,7 +634,7 @@ async def demo_mcp_system():
     
     for i, scenario in enumerate(scenarios, 1):
         print(f"\n" + "="*60)
-        print(f"🎯 Scenario {i}: {scenario['name']}")
+        print(f"🎯 Basic Test {i}: {scenario['name']}")
         print("-" * 40)
         
         result = await server.call_tool(scenario['tool'], **scenario['params'])
@@ -441,28 +661,76 @@ async def demo_mcp_system():
             print(f"❌ Error: {result.get('error', 'Unknown error')}")
 
 if __name__ == "__main__":
-    import asyncio
+    print("🚀 MCP Project Template with Ollama LLM")
+    print("1. Run intelligent demo (with Ollama)")
+    print("2. Run basic demo (without LLM)")
+    print("3. Interactive mode (with Ollama)")
     
-    # Run the demo
-    asyncio.run(demo_mcp_system())
+    try:
+        choice = input("\nChoose mode (1, 2, or 3): ").strip()
+        
+        if choice == "2":
+            # Basic demo without LLM
+            async def basic_demo():
+                server = MCPServer("company-data-server")
+                db_tool = DatabaseMCPTool("company_data.db")
+                file_tool = FileSystemMCPTool("workspace")
+                server.register_tool(db_tool)
+                server.register_tool(file_tool)
+                await demo_basic_mcp(server)
+            
+            asyncio.run(basic_demo())
+            
+        elif choice == "3":
+            # Interactive mode only
+            async def interactive_only():
+                server = MCPServer("company-data-server")
+                db_tool = DatabaseMCPTool("company_data.db")
+                file_tool = FileSystemMCPTool("workspace")
+                server.register_tool(db_tool)
+                server.register_tool(file_tool)
+                
+                try:
+                    agent = OllamaMCPAgent(server)
+                    await agent.interactive_mode()
+                except RuntimeError as e:
+                    print(f"❌ {e}")
+            
+            asyncio.run(interactive_only())
+            
+        else:
+            # Full demo with Ollama
+            asyncio.run(demo_mcp_system())
+            
+    except KeyboardInterrupt:
+        print("\n👋 Goodbye!")
     
-    print("\n" + "="*60)
-    print("🎓 MCP Learning Summary:")
-    print("• Tools: Standardized interfaces to external systems")
-    print("• Resources: Managed data sources with controlled access")
-    print("• Server: Hosts and orchestrates tools/resources")
-    print("• Protocol: Ensures secure, consistent communication")
-    print("• Manifest: Describes server capabilities")
+    print("\n" + "="*70)
+    print("🎓 MCP + Ollama Integration Summary:")
+    print("• 🔌 MCP Tools: Standardized interfaces to data sources")
+    print("• 🤖 Ollama LLM: Real intelligence for tool selection")
+    print("• 🧠 Natural Language: Process requests in plain English")
+    print("• 📊 Rich Data: Database and file system integration")
+    print("• 🔄 Interactive: Chat-like interface for exploration")
     
-    print("\n🔧 Integration with LangChain:")
-    print("• Convert MCP tools to LangChain Tools")
-    print("• Use in agent workflows and chains")
-    print("• Combine with LangGraph for complex workflows")
-    print("• Add authentication and security layers")
+    print("\n🔧 Technical Architecture:")
+    print("• MCPTool: Abstract base class for all tools")
+    print("• MCPServer: Hosts and orchestrates tool execution")
+    print("• OllamaMCPAgent: LLM-powered request processing")
+    print("• Tool Selection: Ollama analyzes requests and chooses tools")
+    print("• Natural Responses: LLM generates human-friendly output")
     
-    print("\n🚀 Production Considerations:")
-    print("• Authentication and authorization")
-    print("• Rate limiting and resource management")
-    print("• Error handling and logging")
-    print("• Tool versioning and compatibility")
+    print("\n� Production Ready Features:")
+    print("• Async/await support for scalability")
+    print("• Error handling and graceful degradation")
+    print("• Tool registration and discovery")
+    print("• JSON schema validation")
+    print("• Extensible architecture for new tools")
+    
+    print("\n� Integration Options:")
+    print("• LangChain: Convert MCP tools to LangChain Tools")
+    print("• LangGraph: Use in complex multi-step workflows")
+    print("• FastAPI: Expose as REST API endpoints")
+    print("• Authentication: Add security layers as needed")
+    print("• Monitoring: Log tool usage and performance")
     print("• Security sandboxing")
