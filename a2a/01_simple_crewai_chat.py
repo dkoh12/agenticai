@@ -24,7 +24,8 @@ def simple_crewai_chat():
         backstory="You are an eager computer science student who loves learning about AI.",
         llm=ollama_llm,
         verbose=True,
-        allow_delegation=True
+        allow_delegation=True, # this enables A2A communication
+        max_retry=1 # retry up to 1 times if task fails
     )
     
     # Agent 2: Teacher
@@ -34,7 +35,8 @@ def simple_crewai_chat():
         backstory="You are a patient AI instructor who enjoys teaching students.",
         llm=ollama_llm,
         verbose=True,
-        allow_delegation=True
+        allow_delegation=True,
+        max_retry=1 # retry up to 1 time if task fails
     )
     
     # Conversation task
