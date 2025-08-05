@@ -1,16 +1,43 @@
-# MCP (Model Context Protocol) Core
+# Real MCP SDK Integration with LangChain and Ollama
 
-This folder contains core MCP examples, templates, and integrations.
+This directory contains a **refactored implementation** that uses the official Model Context Protocol (MCP) SDK to build production-ready MCP servers and clients that integrate with LangChain and Ollama.
 
-## Contents
+## 📁 File Structure (REFACTORED)
 
-### Core MCP Examples
-- `mcp_system_demo.py` - Complete MCP system demonstration
+### New Modular Architecture:
+
+#### `mcp_server.py` - MCP Server Implementation
+- **Purpose**: Production-ready MCP server using official MCP SDK
+- **Features**:
+  - Real `@server.tool()` decorators for tool registration
+  - Database access tools with SQL query execution
+  - Document access tools for company policies and reports
+  - Proper MCP protocol implementation
+  - stdio server for client connections
+  - Comprehensive logging and error handling
+
+#### `mcp_client.py` - MCP Client Implementation
+- **Purpose**: MCP client that connects to servers and provides LangChain integration
+- **Features**:
+  - Real MCP client with stdio communication
+  - Automatic tool discovery and listing
+  - LangChain tool conversion utilities
+  - Connection management and error handling
+  - Simplified fallback tools for demo purposes
+
+#### `mcp_langchain_demo.py` - Integration Demo
+- **Purpose**: Demonstrates MCP + LangChain + Ollama integration
+- **Features**:
+  - Multiple demo modes (automated, interactive, architecture info)
+  - Real Ollama LLM integration for natural language responses
+  - LangChain tool orchestration
+  - Interactive chat interface
+  - Production architecture examples
+
+### Legacy Files:
+- `mcp_langchain_integration.py` - Original monolithic file (can be removed)
+- `mcp_system_demo.py` - Basic MCP system demonstration
 - `mcp_project_template.py` - Template for creating MCP projects
-- `mcp_langchain_integration.py` - Integration between MCP and LangChain
-
-### Documentation
-- `MCP_GUIDE.md` - Comprehensive guide to MCP implementation
 
 ## What is MCP?
 
