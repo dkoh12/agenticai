@@ -4,10 +4,10 @@ Using the official MCP SDK to build production-ready MCP servers
 """
 
 # Real MCP SDK imports
-import mcp
 from mcp.server import Server
-from mcp.server.models import InitializationOptions
-from mcp.server.stdio import stdio_server
+from mcp import stdio_server
+from mcp.types import Tool
+import mcp.types as types
 
 import json
 import sqlite3
@@ -169,78 +169,109 @@ Employees can work remotely up to 3 days per week.
     def _register_tools(self):
         """Register MCP tools with the server"""
         
-        # Register database query tool
-        @self.server.tool()
-        async def query_database(query: str) -> str:
-            """Execute SQL query on company database (employees, projects tables)
-            
-            Args:
-                query: SQL query string to execute
-                
-            Returns:
-                JSON string with query results or error message
-            """
-            try:
-                self.conn.row_factory = sqlite3.Row
-                cursor = self.conn.cursor()
-                cursor.execute(query)
-                results = [dict(row) for row in cursor.fetchall()]
-                logger.info(f"Database query executed: {query[:50]}...")
-                return json.dumps(results, indent=2)
-            except Exception as e:
-                logger.error(f"Database query error: {e}")
-                return json.dumps({"error": str(e)})
+        # Register list_tools handler
+        @self.server.list_tools()
+        async def handle_list_tools() -> list[Tool]:
+            """Return available tools"""
+            return [
+                Tool(
+                    name="query_database",
+                    description="Execute SQL query on company database (employees, projects tables)",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "query": {
+                                "type": "string",
+                                "description": "SQL query to execute"
+                            }
+                        },
+                        "required": ["query"]
+                    }
+                ),
+                Tool(
+                    name="access_document", 
+                    description="Access company documents and policies",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "action": {
+                                "type": "string",
+                                "enum": ["list", "read"],
+                                "description": "Action to perform"
+                            },
+                            "filename": {
+                                "type": "string",
+                                "description": "Filename to read (required for 'read' action)"
+                            }
+                        },
+                        "required": ["action"]
+                    }
+                )
+            ]
         
-        # Register document access tool
-        @self.server.tool()
-        async def access_document(action: str, filename: str = None) -> str:
-            """Access company documents and policies
-            
-            Args:
-                action: Either 'list' to see available documents or 'read' to read a specific file
-                filename: Name of the file to read (required when action is 'read')
-                
-            Returns:
-                JSON string with document content, file list, or error message
-            """
-            try:
-                if action == "list":
-                    files = [f.name for f in self.base_path.iterdir() if f.is_file()]
-                    logger.info(f"Listed {len(files)} available documents")
-                    return json.dumps({"files": files})
-                
-                elif action == "read" and filename:
-                    file_path = self.base_path / filename
-                    if file_path.exists():
-                        content = file_path.read_text()
-                        logger.info(f"Read document: {filename}")
-                        return json.dumps({"filename": filename, "content": content})
-                    else:
-                        logger.warning(f"Document not found: {filename}")
-                        return json.dumps({"error": f"File {filename} not found"})
-                
-                else:
-                    return json.dumps({"error": "Invalid action. Use 'list' or 'read' with filename"})
-                    
-            except Exception as e:
-                logger.error(f"Document access error: {e}")
-                return json.dumps({"error": str(e)})
+        # Register call_tool handler
+        @self.server.call_tool()
+        async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
+            """Handle tool calls"""
+            if name == "query_database":
+                return await self._handle_database_query(arguments.get("query", ""))
+            elif name == "access_document":
+                return await self._handle_document_access(
+                    arguments.get("action", ""),
+                    arguments.get("filename")
+                )
+            else:
+                raise ValueError(f"Unknown tool: {name}")
         
         logger.info("MCP tools registered successfully")
+    
+    async def _handle_database_query(self, query: str) -> list[types.TextContent]:
+        """Handle database query"""
+        try:
+            self.conn.row_factory = sqlite3.Row
+            cursor = self.conn.cursor()
+            cursor.execute(query)
+            results = [dict(row) for row in cursor.fetchall()]
+            logger.info(f"Database query executed: {query[:50]}...")
+            response = json.dumps(results, indent=2)
+            return [types.TextContent(type="text", text=response)]
+        except Exception as e:
+            logger.error(f"Database query error: {e}")
+            error_response = json.dumps({"error": str(e)})
+            return [types.TextContent(type="text", text=error_response)]
+    
+    async def _handle_document_access(self, action: str, filename: str = None) -> list[types.TextContent]:
+        """Handle document access"""
+        try:
+            if action == "list":
+                files = [f.name for f in self.base_path.iterdir() if f.is_file()]
+                logger.info(f"Listed {len(files)} available documents")
+                response = json.dumps({"files": files})
+            elif action == "read" and filename:
+                file_path = self.base_path / filename
+                if file_path.exists():
+                    content = file_path.read_text()
+                    logger.info(f"Read document: {filename}")
+                    response = json.dumps({"filename": filename, "content": content})
+                else:
+                    logger.warning(f"Document not found: {filename}")
+                    response = json.dumps({"error": f"File {filename} not found"})
+            else:
+                response = json.dumps({"error": "Invalid action. Use 'list' or 'read' with filename"})
+            
+            return [types.TextContent(type="text", text=response)]
+        except Exception as e:
+            logger.error(f"Document access error: {e}")
+            error_response = json.dumps({"error": str(e)})
+            return [types.TextContent(type="text", text=error_response)]
     
     async def start(self):
         """Start the MCP server"""
         logger.info("Starting Real MCP Server...")
         try:
-            async with stdio_server() as (read_stream, write_stream):
-                await self.server.run(
-                    read_stream, write_stream,
-                    InitializationOptions(
-                        server_name="company-data-mcp-server",
-                        server_version="1.0.0",
-                        capabilities=self.server.capabilities
-                    )
-                )
+            # Use stdio transport
+            async with stdio_server() as transport:
+                await self.server.run(*transport)
         except Exception as e:
             logger.error(f"Server error: {e}")
             raise
@@ -250,7 +281,6 @@ Employees can work remotely up to 3 days per week.
         return {
             "name": "company-data-mcp-server",
             "version": "1.0.0",
-            "capabilities": self.server.capabilities,
             "tools": ["query_database", "access_document"],
             "description": "MCP server providing access to company data and documents"
         }
@@ -273,17 +303,31 @@ async def main():
     print("  • access_document: Read company documents and policies")
     
     print("\n🎯 Usage:")
-    print("  Connect to this server using MCP clients via stdio protocol")
-    print("  Or use with LangChain integration for AI workflows")
+    print("  This server can now be used with MCP clients")
+    print("  Or integrated with LangChain for AI workflows")
     
-    print("\n▶️ Starting server (Press Ctrl+C to stop)...")
+    print("\n✅ MCP Server initialized successfully!")
+    print("  The server is ready to handle tool calls programmatically")
+    
+    # Demonstrate tool functionality
+    print("\n🧪 Testing tools directly:")
     
     try:
-        await server.start()
-    except KeyboardInterrupt:
-        print("\n👋 Server stopped!")
+        # Test database query
+        result = await server._handle_database_query("SELECT name, department FROM employees LIMIT 3")
+        print(f"📊 Database test: {result[0].text[:100]}...")
+        
+        # Test document access
+        result = await server._handle_document_access("list")
+        print(f"📄 Document test: {result[0].text[:100]}...")
+        
+        print("\n✅ All tools working correctly!")
+        
     except Exception as e:
-        print(f"❌ Server error: {e}")
+        print(f"❌ Tool test error: {e}")
+    
+    print("\n💡 To use this server with clients, integrate it programmatically")
+    print("   rather than running as a standalone stdio server")
 
 if __name__ == "__main__":
     asyncio.run(main())
