@@ -1,0 +1,45 @@
+{
+  "roadmap": {
+    "Q1_2025": {
+      "focus": "AI and Infrastructure",
+      "projects": [
+        {
+          "name": "AI Customer Assistant",
+          "priority": "P0",
+          "completion": "75%"
+        },
+        {
+          "name": "Cloud Migration",
+          "priority": "P1",
+          "completion": "100%"
+        }
+      ]
+    },
+    "Q2_2025": {
+      "focus": "User Experience",
+      "projects": [
+        {
+          "name": "Website Redesign",
+          "priority": "P0",
+          "completion": "0%"
+        },
+        {
+          "name": "Sales Dashboard",
+          "priority": "P1",
+          "completion": "30%"
+        }
+      ]
+    },
+    "Q3_2025": {
+      "focus": "Mobile Strategy",
+      "projects": [
+        {
+          "name": "Mobile App",
+          "priority": "P0",
+          "completion": "0%"
+        }
+      ]
+    }
+  },
+  "updated": "2025-01-20"
+}
