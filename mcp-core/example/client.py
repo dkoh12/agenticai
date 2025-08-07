@@ -24,7 +24,7 @@ class OllamaClient:
         # Add tool information to system prompt if tools are available
         if tools:
             tool_descriptions = self._format_tools_for_prompt(tools)
-            prompt = f"You have access to the following tools:\n{tool_descriptions}\n\nTo use a tool, respond with a JSON object in this exact format:\n{{\n  \"tool_use\": {{\n    \"name\": \"tool_name\",\n    \"arguments\": {{\"param\": \"value\"}}\n  }}\n}}\n\nTo respond normally without tools, use this format:\n{{\n  \"response\": \"your normal text response here\"\n}}\n\n{prompt}"
+            prompt = f"You have access to the following tools:\n{tool_descriptions}\n\nTo use a tool, respond with a JSON object in this exact format:\n{{\n  \"tool_use\": {{\n    \"name\": \"tool_name\",\n    \"arguments\": {{\"param\": \"value\"}}\n  }}\n}}\n\nTo respond normally without tools (especially when you have TOOL_RESULT information to work with), use this format:\n{{\n  \"response\": \"your normal text response here incorporating any tool results\"\n}}\n\nWhen you see TOOL_RESULT in the conversation, use that information to provide a comprehensive answer to the user's question. Do not call tools again unless you need additional information.\n\n{prompt}"
             
             payload = {
                 "model": self.model,
@@ -102,7 +102,11 @@ class OllamaClient:
             content = msg["content"]
             
             if isinstance(content, str):
-                prompt_parts.append(f"{role.upper()}: {content}")
+                # Special handling for tool role to make it clear it's a tool result
+                if role == "tool":
+                    prompt_parts.append(f"TOOL_RESULT: {content}")
+                else:
+                    prompt_parts.append(f"{role.upper()}: {content}")
             elif isinstance(content, list):
                 # Handle complex content (like tool results)
                 text_parts = []
@@ -110,6 +114,10 @@ class OllamaClient:
                     if isinstance(item, dict):
                         if item.get("type") == "text":
                             text_parts.append(item["text"])
+                        elif item.get("type") == "tool_use":
+                            # Convert tool use back to readable format
+                            tool_info = item["tool_use"]
+                            text_parts.append(f"Used tool {tool_info['name']} with arguments: {tool_info['arguments']}")
                         elif item.get("type") == "tool_result":
                             text_parts.append(f"Tool result: {item.get('content', '')}")
                     else:
@@ -232,10 +240,10 @@ class MCPClient:
                         print("Tool result:", result)
                         print()
 
-                        # Add assistant's tool use intention to messages
+                        # Add assistant's tool use to messages (this represents what the assistant decided to do)
                         messages.append({
-                            "role": "assistant",
-                            "content": f"I'll use the {tool_name} tool with these parameters: {tool_args}"
+                            "role": "assistant", 
+                            "content": [{"type": "tool_use", "tool_use": {"name": tool_name, "arguments": tool_args}}]
                         })
                         
                         # Add tool result to messages
@@ -249,11 +257,13 @@ class MCPClient:
                         import traceback
                         traceback.print_exc()
                         
-                        # Add error to messages so LLM can handle it
+                        # Add assistant's tool use attempt to messages
                         messages.append({
                             "role": "assistant",
-                            "content": f"I attempted to use the {tool_name} tool but encountered an error."
+                            "content": [{"type": "tool_use", "tool_use": {"name": tool_name, "arguments": tool_args}}]
                         })
+                        
+                        # Add error to messages so LLM can handle it
                         messages.append({
                             "role": "tool",
                             "content": f"Error: {str(e)}"
@@ -262,7 +272,7 @@ class MCPClient:
             # If no tool use was detected, we're done - return the text response
             if not has_tool_use:
                 final_response = "\n".join(assistant_content)
-                print(f"No tool use detected. Final response: {final_response}")
+                # print(f"No tool use detected. Final response: {final_response}")
                 return final_response
             
             # If we used tools, continue the loop to see if LLM wants to use more tools
