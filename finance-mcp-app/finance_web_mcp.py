@@ -3,7 +3,8 @@ Finance Web App with MCP Integration
 Modern web interface that connects to Finance MCP Server and Ollama Client
 """
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import asyncio
 import sys
 import os
@@ -19,6 +20,9 @@ from finance_mcp_client import FinanceMCPClient
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
+
+# Enable CORS for all domains on all routes
+CORS(app)
 
 class FinanceWebMCP:
     """Web interface that uses MCP client for finance operations"""
@@ -224,123 +228,31 @@ class FinanceWebMCP:
 finance_web = FinanceWebMCP()
 
 # ============================================================================
-# WEB ROUTES
+# API ROUTES ONLY - React Frontend Handles UI
 # ============================================================================
 
+# Remove HTML routes since React frontend handles UI
+# Keep only API endpoints for the React app
+
 @app.route('/')
-def dashboard():
-    """Main dashboard page"""
-    
-    # Get current month summary
-    summary_result = finance_web.get_financial_summary()
-    summary = summary_result if summary_result.get('success') else {
-        'total_income': 0,
-        'total_expenses': 0,
-        'net_income': 0,
-        'savings_rate': 0,
-        'period': datetime.now().strftime("%Y-%m")
-    }
-    
-    # Get recent transactions
-    transactions_result = finance_web.get_transactions(limit=5)
-    recent_transactions = transactions_result.get('transactions', []) if transactions_result.get('success') else []
-    
-    # Get budget status
-    budget_result = finance_web.get_budget_status()
-    alerts = budget_result.get('alerts', []) if budget_result.get('success') else []
-    budget_status = budget_result.get('budget_status', []) if budget_result.get('success') else []
-    
-    return render_template('dashboard.html', 
-                         summary=summary, 
-                         recent_transactions=recent_transactions,
-                         alerts=alerts,
-                         budget_status=budget_status)
-
-@app.route('/transactions')
-def transactions():
-    """Transactions page"""
-    
-    # Get all transactions
-    transactions_result = finance_web.get_transactions(limit=50)
-    all_transactions = transactions_result.get('transactions', []) if transactions_result.get('success') else []
-    
-    # Get unique categories for filter
-    categories = list(set([t.get('category', '') for t in all_transactions if t.get('category')]))
-    categories.sort()
-    
-    return render_template('transactions.html', 
-                         transactions=all_transactions,
-                         categories=categories)
-
-@app.route('/budgets')
-def budgets():
-    """Budget management page"""
-    
-    # Get budget status
-    budget_result = finance_web.get_budget_status()
-    budget_status = budget_result.get('budget_status', []) if budget_result.get('success') else []
-    alerts = budget_result.get('alerts', []) if budget_result.get('success') else []
-    
-    return render_template('budgets.html', 
-                         budget_status=budget_status,
-                         alerts=alerts)
-
-@app.route('/chat')
-def chat():
-    """AI Chat interface"""
-    return render_template('chat.html')
-
-@app.route('/reports')
-def reports():
-    """Financial reports page"""
-    
-    # Get summary for current month
-    summary_result = finance_web.get_financial_summary()
-    summary = summary_result if summary_result.get('success') else {}
-    
-    # Get last 3 months for trend
-    monthly_summaries = []
-    for i in range(3):
-        date = datetime.now() - timedelta(days=i*30)
-        month = date.strftime("%Y-%m")
-        month_summary = finance_web.get_financial_summary(month)
-        if month_summary.get('success'):
-            month_summary['month_name'] = date.strftime("%B %Y")
-            monthly_summaries.append(month_summary)
-    
-    return render_template('reports.html', 
-                         summary=summary,
-                         monthly_summaries=monthly_summaries)
+def index():
+    """Redirect to React frontend"""
+    return jsonify({
+        "message": "Finance MCP API Server", 
+        "react_frontend": "http://localhost:5173",
+        "api_endpoints": [
+            "/api/transactions",
+            "/api/add_transaction", 
+            "/api/financial_summary",
+            "/api/budgets",
+            "/api/categories",
+            "/api/chat"
+        ]
+    })
 
 # ============================================================================
 # API ROUTES
 # ============================================================================
-
-@app.route('/add_transaction', methods=['POST'])
-def add_transaction():
-    """Add transaction via form submission"""
-    try:
-        amount = float(request.form['amount'])
-        category = request.form['category']
-        description = request.form.get('description', '')
-        transaction_type = request.form.get('type', 'expense')
-        
-        result = finance_web.add_transaction(
-            amount=amount,
-            category=category,
-            description=description,
-            transaction_type=transaction_type
-        )
-        
-        if result['success']:
-            flash('Transaction added successfully!', 'success')
-        else:
-            flash(f'Error: {result["error"]}', 'error')
-        
-        return redirect(url_for('dashboard'))
-    except Exception as e:
-        flash(f'Error: {str(e)}', 'error')
-        return redirect(url_for('dashboard'))
 
 @app.route('/api/add_transaction', methods=['POST'])
 def api_add_transaction():
@@ -354,11 +266,6 @@ def api_add_transaction():
             description=data.get('description', ''),
             transaction_type=data.get('type', 'expense')
         )
-        
-        if result['success']:
-            flash('Transaction added successfully!', 'success')
-        else:
-            flash(f'Error: {result["error"]}', 'error')
         
         return jsonify(result)
     except Exception as e:
@@ -379,18 +286,77 @@ def api_chat():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
-@app.route('/api/summary')
-def api_summary():
+@app.route('/api/financial_summary')
+def api_financial_summary():
     """Get financial summary via API"""
     month = request.args.get('month')
     result = finance_web.get_financial_summary(month)
-    return jsonify(result)
+    if result.get('success'):
+        # Return data in the format expected by frontend
+        return jsonify({
+            "total_income": result.get('total_income', 0),
+            "total_expenses": result.get('total_expenses', 0), 
+            "net_income": result.get('net_income', 0),
+            "expense_by_category": result.get('expenses_by_category', {})
+        })
+    else:
+        return jsonify({"error": result.get('error', 'Unknown error')}), 500
+
+@app.route('/api/budgets')
+def api_budgets():
+    """Get budgets via API"""
+    result = finance_web.get_budget_status()
+    if result.get('success'):
+        budgets = []
+        for budget in result.get('budget_status', []):
+            budgets.append({
+                "category": budget['category'],
+                "budgeted": budget['budget'],
+                "spent": budget['spent'],
+                "remaining": budget['remaining']
+            })
+        return jsonify(budgets)
+    else:
+        return jsonify({"error": result.get('error', 'Unknown error')}), 500
 
 @app.route('/api/transactions')
 def api_transactions():
     """Get transactions via API"""
-    limit = int(request.args.get('limit', 10))
+    limit = int(request.args.get('limit', 50))
     result = finance_web.get_transactions(limit)
+    if result.get('success'):
+        transactions = []
+        for txn in result.get('transactions', []):
+            transactions.append({
+                "amount": txn['amount'],
+                "description": txn.get('description', ''),
+                "category": txn['category'],
+                "date": txn['date']
+            })
+        return jsonify(transactions)
+    else:
+        return jsonify({"error": result.get('error', 'Unknown error')}), 500
+
+@app.route('/api/categories')
+def api_categories():
+    """Get available categories via API"""
+    categories = [
+        'Food',
+        'Transportation', 
+        'Entertainment',
+        'Utilities',
+        'Healthcare',
+        'Shopping',
+        'Income',
+        'Other'
+    ]
+    return jsonify(categories)
+
+@app.route('/api/summary')
+def api_summary():
+    """Get financial summary via API (legacy endpoint)"""
+    month = request.args.get('month')
+    result = finance_web.get_financial_summary(month)
     return jsonify(result)
 
 @app.route('/api/budget_status')
@@ -400,21 +366,14 @@ def api_budget_status():
     return jsonify(result)
 
 # ============================================================================
-# ERROR HANDLERS
+# STARTUP
 # ============================================================================
 
-@app.errorhandler(404)
-def not_found_error(error):
-    return render_template('base.html'), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    return render_template('base.html'), 500
-
 if __name__ == '__main__':
-    print("🌐 Starting Finance Web App with MCP Integration...")
+    print("🌐 Starting Finance MCP API Server...")
     print("📡 Make sure your Finance MCP Server is running!")
     print("🦙 Ollama Llama 3.2 integration enabled")
-    print("\n🚀 Web app will be available at: http://localhost:5002")
+    print("⚛️  React Frontend: http://localhost:5173")
+    print("🚀 API Server: http://localhost:5003")
     
-    app.run(debug=True, host='0.0.0.0', port=5002)
+    app.run(debug=True, host='0.0.0.0', port=5003)
