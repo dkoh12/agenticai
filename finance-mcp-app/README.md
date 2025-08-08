@@ -22,3 +22,20 @@
 │  ├── Summary Tools                         │
 │  └── AI Assistant                          │
 └─────────────────────────────────────────────┘
+
+# Start React Frontend
+
+React server is on localhost:5173
+```
+cd agenticai/finance-mcp-app/frontend
+npm run dev
+```
+
+# Start Flask Backend
+
+Flask backend server is on localhost:5003
+```
+source .venv/bin/activate
+cd finance-mcp-app
+python finance_web_mcp.py
+```
