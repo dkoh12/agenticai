@@ -39,3 +39,18 @@ source .venv/bin/activate
 cd finance-mcp-app
 python finance_web_mcp.py
 ```
+
+# Single Server Production (Optional)
+
+To run everything from one server:
+
+1. Build React app:
+```
+cd frontend
+npm run build
+```
+
+2. Modify Flask to serve static files (would need code changes)
+3. Access everything at http://localhost:5003
+
+**Note:** Currently requires code modifications to Flask server to serve the built React files.
